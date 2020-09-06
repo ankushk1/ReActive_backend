@@ -3,7 +3,7 @@ const Payee = require('../models/payee');
 const {accNumGen} = require('../utility/utility')
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const {mail}=require('../utility/nodemailer')
+// const {mail}=require('../utility/nodemailer')
 
  //signup
 exports.signup = function (req, res) { 
