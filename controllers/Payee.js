@@ -17,6 +17,6 @@ exports.getPayeeById = (req, res, next, id) => {
 };
 
 exports.getPayee = (req, res) => {
-  return res.json({"payee":req.payee});
+  return res.json(req.payee);
 };
 

@@ -9,6 +9,6 @@ const {getPayee,getPayeeById}=require('../controllers/Payee')
 router.param('userID',getUserById) 
 router.param('payeeId',getPayeeById); 
 
-router.get('/payee/:payeeId/',validateUser,getPayee); //get payee
+router.get('/payee/:payeeId/',validateUser,getPayeeById,getPayee); //get payee
 
 module.exports = router;

@@ -1,14 +1,14 @@
 const User = require('../models/user');
 const Payee = require('../models/payee');
-const {
-    accNumGen
-} = require('../utility/utility')
+const {accNumGen} = require('../utility/utility')
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const user = require('../models/user');
+const {mail}=require('../utility/nodemailer')
 
-exports.signup = function (req, res) {//signup
+ //signup
+exports.signup = function (req, res) { 
     const accnum = accNumGen();
+    const rec=req.body.email
     User.create({
         name: req.body.name,
         email: req.body.email,
@@ -20,7 +20,7 @@ exports.signup = function (req, res) {//signup
             return res.status(500).json({
                 "error": err
             })
-        else
+        else{
             return res.status(200).json({
                 status: "Success",
                 message: "User registered",
@@ -30,7 +30,9 @@ exports.signup = function (req, res) {//signup
                     accountNo: result.accountNo
                 }
             });
-
+            // mail(`${rec}`,'a','a')    
+        }
+        
     });
 }
 
