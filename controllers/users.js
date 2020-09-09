@@ -2,50 +2,50 @@ const User = require('../models/user');
 const Payee = require('../models/payee');
 const {accNumGen} = require('../utility/utility')
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-// const {mail}=require('../utility/nodemailer')
+const jwt = require('jsonwebtoken')
+const {sendMail}=require('../utility/nodemailer')
 
  //signup
 exports.signup = function (req, res) { 
     const accnum = accNumGen();
-    const rec=req.body.email
-    User.create({
+    const user = new User({
         name: req.body.name,
         email: req.body.email,
         password: req.body.password,
-        accountNo: accnum,
-        blnc: 1000
-    }, function (err, result) {
-        if (err)
-            return res.status(500).json({
-                "error": err
-            })
-        else{
-            return res.status(200).json({
-                status: "Success",
-                message: "User registered",
-                data: {
-                    email: result.email,
-                    name: result.name,
-                    accountNo: result.accountNo
-                }
-            });
-            // mail(`${rec}`,'a','a')    
-        }
-        
+        blnc:1000,
+        accountNo: accnum
     });
+    user.save((err, user) => {
+      if (err) {
+          console.log(err)
+        return res.status(400).json({
+          err: 'NOT able to save user in DB',
+        });
+      } 
+      res.json({
+        name: user.name,
+        email: user.email,
+        id: user._id,
+        accountNo:accnum,
+        blnc:1000
+      });
+    });
+
+    sendMail(req.body.email,'Sign up successful', ` You have been registered with ReActive bank, your account number is ${accnum}`)
 }
 
 
 
 //authenticate user
 exports.login = function (req, res) {
+    var accountNo=''
     User.findOne({
         email: req.body.email
     }, function (err, result) {
-        if (err) {
+        if (result===null) {
             res.status(400).json({
-                "error": err
+                status:"no user found",
+                message: "Invalid email / password"
             })
         } else {
             if (bcrypt.compareSync(req.body.password, result.password)) {
@@ -59,13 +59,15 @@ exports.login = function (req, res) {
                     status: "Success",
                     message: "Logged in",
                     data: {
-                        id: result._id,
-                        email: result.email,
                         name: result.name,
+                        email: result.email,
                         blnc: result.blnc,
+                        accountNo:result.accountNo,
+                        id: result._id,
                         token: token
                     }
                 });
+
             } else {
                 res.status(400).json({
                     status: "error",
@@ -74,6 +76,7 @@ exports.login = function (req, res) {
             }
         }
     });
+    sendMail(req.body.email,'Sign in successful', `You have signed in on your account`)
 }
 
 exports.getUserById = (req, res, next, id) => {
@@ -105,22 +108,29 @@ exports.transferMoney = async (req, res) => {
             accountNo: req.body.accountNo
         });
         const userId = User.findById(req.params.userID)
+
+
+
         const transferAmount = req.body.amount
         const totalblnc = req.profile.blnc
 
         //check if not a user
         if (!payeeId) {
             res.status(400).json({
-                error: 'No payee was found in DB',
+                error:1,
+                message: 'No payee was found ',
             });
         }
 
         //check min balance
-        if (totalblnc < transferAmount || totalblnc<=0) {
+        else if (totalblnc < transferAmount || totalblnc<=0) {
             res.status(400).json({
+                error:1,
                 message: "Low balance, please add money to account"
             })
-        } else {
+        }
+       
+        else {
             const user = await userId.updateOne({
                 $inc: {
                     blnc: -transferAmount
@@ -133,6 +143,7 @@ exports.transferMoney = async (req, res) => {
                 }
             })
             res.status(200).json({
+                error:0,
                 message: "transaction successful"
             })
         }
@@ -142,6 +153,7 @@ exports.transferMoney = async (req, res) => {
             message: "transaction failed"
         })
     }
+
 
 };
 
